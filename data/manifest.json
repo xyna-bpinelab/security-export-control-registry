@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "description": "Machine-readable index of consolidated export-control / sanction entity lists published by this registry. Each entry points to a JSON file under data/entities/. Data is a best-effort mirror of public government sources — always verify against the primary source (source_url on each record) before making compliance decisions.",
+  "lists": [
+    {
+      "list_id": "us-consolidated-screening-list",
+      "country": "us",
+      "name_en": "Consolidated Screening List (CSL)",
+      "file": "data/entities/us.json",
+      "record_count": 25818,
+      "source_url": "https://www.trade.gov/consolidated-screening-list",
+      "update_frequency": "daily",
+      "last_updated": "2026-07-19"
+    }
+  ],
+  "generated_at": "2026-07-19T06:32:09Z"
+}

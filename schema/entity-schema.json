@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sanctioned/Controlled Entity Schema",
+  "description": "Common normalized record for entities (companies, organizations, individuals, vessels, aircraft) appearing on a country's export control or sanction list.",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/entity"
+  },
+  "definitions": {
+    "entity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Globally unique identifier, e.g. 'us-csl-15268'",
+          "pattern": "^[a-z]{2}-[a-z0-9_-]+$"
+        },
+        "country": {
+          "type": "string",
+          "description": "ISO-3166-like two-letter country/region code of the issuing authority (e.g. 'us', 'jp', 'cn')",
+          "pattern": "^[a-z]{2}$"
+        },
+        "list_id": {
+          "type": "string",
+          "description": "References the 'id' field of the source datasource in countries/<cc>/datasources.yaml"
+        },
+        "source_list_name": {
+          "type": "string",
+          "description": "Name of the specific sub-list this record came from, if the datasource aggregates multiple lists (e.g. 'Entity List (EL) - Bureau of Industry and Security')"
+        },
+        "entity_name": {
+          "type": "string",
+          "description": "Primary listed name of the entity or individual"
+        },
+        "entity_type": {
+          "type": "string",
+          "description": "Category of the listed party",
+          "enum": [
+            "company",
+            "individual",
+            "organization",
+            "vessel",
+            "aircraft",
+            "other"
+          ]
+        },
+        "aliases": {
+          "type": "array",
+          "description": "Alternate names / spellings",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addresses": {
+          "type": "array",
+          "description": "Known addresses of the listed party",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "description": "Program(s) or stated reason for listing"
+        },
+        "date_added": {
+          "type": ["string", "null"],
+          "description": "Date the entity was added to the list, if known, in YYYY-MM-DD format",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "source_url": {
+          "type": "string",
+          "description": "URL to the specific entry or the official source page"
+        },
+        "last_verified": {
+          "type": "string",
+          "description": "Date this record was last confirmed against the primary source, in YYYY-MM-DD format",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      },
+      "required": [
+        "id",
+        "country",
+        "list_id",
+        "entity_name",
+        "entity_type",
+        "source_url",
+        "last_verified"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

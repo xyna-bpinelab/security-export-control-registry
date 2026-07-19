@@ -15,8 +15,10 @@ security-export-control-registry/
 ├── CONTRIBUTING.md         # コミュニティ貢献ガイド
 ├── schema/                 # 共通データ構造スキーマ（JSON Schema）
 │   ├── datasource-schema.json
-│   └── validate_datasources.py
-├── countries/              # 国・地域別データ
+│   ├── validate_datasources.py
+│   ├── entity-schema.json
+│   └── validate_entities.py
+├── countries/              # 国・地域別データ（法令・リストのメタデータ）
 │   ├── jp/                 # 日本（外為法、輸出令、貨物等省令、運用・役務通達など）
 │   │   └── datasources.yaml
 │   ├── us/                 # 米国（EAR, ITAR, Entity List, SDNリストなど）
@@ -25,10 +27,17 @@ security-export-control-registry/
 │   │   └── datasources.yaml
 │   ├── eu/                 # 欧州（EU Dual-Use Regulation）
 │   └── international/      # 国際レジーム（WA, MTCR, NSG, AG）
+├── data/                   # 統合エンティティデータベース（掲載企業・個人等の実体データ）
+│   ├── manifest.json       # 収録リストの索引（件数・更新日・出典URL）
+│   └── entities/
+│       └── us.json         # 米国 Consolidated Screening List（正規化済み）
 └── scripts/
-    └── crawler/            # 自動更新検知クローラー
-        ├── check_updates.py
-        └── requirements.txt
+    ├── crawler/            # 自動更新検知クローラー
+    │   ├── check_updates.py
+    │   └── requirements.txt
+    └── ingest/             # 実体データ取得・正規化スクリプト
+        ├── common.py
+        └── ingest_us_csl.py
 ```
 
 ## セットアップと使用方法
@@ -55,6 +64,32 @@ python schema/validate_datasources.py
 
 ```bash
 python scripts/crawler/check_updates.py
+```
+
+## 統合エンティティデータベース（API的な利用方法）
+
+`countries/` のメタデータとは別に、各国の規制リストに実際に掲載されている企業・個人等の実体データを
+`data/entities/` 配下にJSONとして正規化・集約しています。サーバーを介さず、以下のURLに直接アクセスするだけで
+外部のAPIやAIアプリから参照できます（無料・恒久的に利用可能）。
+
+```
+https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/data/manifest.json
+https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/data/entities/us.json
+```
+
+`data/manifest.json` が索引となり、収録リストごとのファイルパス・件数・出典・更新頻度を確認できます。
+各レコードは `schema/entity-schema.json` に準拠し、`source_url` と `last_verified` を必ず含みます。
+
+現時点では米国 Consolidated Screening List（Entity List, SDN List等11リストの統合）のみを収録しており、
+`.github/workflows/ingest-entities.yml` により毎日自動更新されます。日本・中国分は今後追加予定です。
+
+**注意:** 本データはあくまで公式情報源のミラー（ベストエフォート）です。コンプライアンス上の判断を行う際は、
+必ず各レコードの `source_url` から一次情報源を確認してください。
+
+```bash
+# 手動での再取得・検証
+python scripts/ingest/ingest_us_csl.py
+python schema/validate_entities.py
 ```
 
 ## ライセンス
