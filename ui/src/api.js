@@ -1,8 +1,10 @@
 import jsYaml from 'js-yaml';
 
-// Set to 'local' for development inside this monorepo.
-// Set to 'remote' when UI is hosted in a different repository or production CDN.
-const DATA_SOURCE_MODE = 'local';
+// 'local' during `vite dev` (reads ../countries via vite.config.js publicDir).
+// 'remote' in production builds (reads from raw.githubusercontent.com), so the
+// deployed site (e.g. GitHub Pages) always serves the latest data from main
+// without needing countries/ copied into the build output.
+const DATA_SOURCE_MODE = import.meta.env.PROD ? 'remote' : 'local';
 
 const BASE_URLS = {
   local: '', // vite.config.js publicDir serves ../countries at the site root
