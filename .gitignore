@@ -139,6 +139,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Node.js
+node_modules/
+
 # OS-specific files
 .DS_Store
 .DS_Store?

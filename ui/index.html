@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安全保障輸出管理リーガル・マップ・ツール</title>
+  <meta name="description" content="国内外の安全保障輸出管理に関する法規・リストのサマリーを閲覧し、原典へアクセスするためのポータルサイト">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Styles -->
+  <link rel="stylesheet" href="/src/index.css">
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="container">
+        <div class="logo-area">
+          <span class="logo-icon">🛡️</span>
+          <h1>Security Export Control <span class="text-gradient">Legal Map</span></h1>
+        </div>
+        <p class="subtitle">安全保障輸出管理の法規・規制リストサマリー & 原典ナビゲーター</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- Search & Filter Controls -->
+      <section class="controls-card">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="法規名、規制区分、サマリー内容を検索..." autocomplete="off">
+        </div>
+        
+        <div class="tab-filters">
+          <button class="tab-btn active" data-country="jp" id="tab-jp">🇯🇵 日本 (Japan)</button>
+          <button class="tab-btn" data-country="us" id="tab-us">🇺🇸 米国 (United States)</button>
+        </div>
+      </section>
+
+      <!-- Registry Content Area -->
+      <section id="registry-container" class="registry-grid">
+        <div class="loading-spinner">データを読み込んでいます...</div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="container">
+        <p>&copy; 2026 Security Export Control Registry Project. Open Source under the MIT License.</p>
+        <p class="footer-links">
+          <a href="https://github.com/xyna-bpinelab/security-export-control-registry" target="_blank" rel="noopener">GitHub Repository</a>
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -93,6 +93,36 @@
         "description": {
           "type": "string",
           "description": "Brief summary of the data source"
+        },
+        "summary_tree": {
+          "type": "array",
+          "description": "Hierarchical summary of the content regulated by this datasource",
+          "items": {
+            "type": "object",
+            "properties": {
+              "section": {
+                "type": "string",
+                "description": "Section, Appended Table, or Article number (e.g. '別表第1第1項' or '15 CFR Part 744')"
+              },
+              "title": {
+                "type": "string",
+                "description": "Short title of the section (e.g. '武器' or 'Control List')"
+              },
+              "summary": {
+                "type": "string",
+                "description": "Clear and concise summary of the regulated items or technologies"
+              },
+              "url": {
+                "type": "string",
+                "description": "Direct URL to this specific section in the original text (if available)"
+              }
+            },
+            "required": [
+              "section",
+              "summary"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [
