@@ -25,24 +25,55 @@
     </header>
 
     <main class="container">
-      <!-- Search & Filter Controls -->
-      <section class="controls-card">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" placeholder="法規名、規制区分、サマリー内容を検索..." autocomplete="off">
-        </div>
-        
-        <div class="tab-filters">
-          <button class="tab-btn active" data-country="jp" id="tab-jp">🇯🇵 日本 (Japan)</button>
-          <button class="tab-btn" data-country="us" id="tab-us">🇺🇸 米国 (United States)</button>
-          <button class="tab-btn" data-country="cn" id="tab-cn">🇨🇳 中国 (China)</button>
-        </div>
+      <!-- Mode Switcher -->
+      <section class="mode-switcher">
+        <button class="mode-btn active" data-mode="laws" id="mode-laws">📜 法令・規制リスト</button>
+        <button class="mode-btn" data-mode="entities" id="mode-entities">🗂️ 規制対象エンティティ検索</button>
       </section>
 
-      <!-- Registry Content Area -->
-      <section id="registry-container" class="registry-grid">
-        <div class="loading-spinner">データを読み込んでいます...</div>
-      </section>
+      <!-- Laws & Regulations View -->
+      <div id="laws-view">
+        <!-- Search & Filter Controls -->
+        <section class="controls-card">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="法規名、規制区分、サマリー内容を検索..." autocomplete="off">
+          </div>
+
+          <div class="tab-filters">
+            <button class="tab-btn active" data-country="jp" id="tab-jp">🇯🇵 日本 (Japan)</button>
+            <button class="tab-btn" data-country="us" id="tab-us">🇺🇸 米国 (United States)</button>
+            <button class="tab-btn" data-country="cn" id="tab-cn">🇨🇳 中国 (China)</button>
+          </div>
+        </section>
+
+        <!-- Registry Content Area -->
+        <section id="registry-container" class="registry-grid">
+          <div class="loading-spinner">データを読み込んでいます...</div>
+        </section>
+      </div>
+
+      <!-- Entity Search View -->
+      <div id="entities-view" class="hidden">
+        <section class="controls-card">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="entity-search-input" placeholder="企業名・団体名・エイリアスで検索（2文字以上）..." autocomplete="off">
+          </div>
+
+          <div class="tab-filters">
+            <button class="tab-btn active" data-country="us" id="entity-tab-us">🇺🇸 米国 (CSL)</button>
+            <button class="tab-btn" data-country="jp" id="entity-tab-jp" disabled>🇯🇵 日本（準備中）</button>
+            <button class="tab-btn" data-country="cn" id="entity-tab-cn" disabled>🇨🇳 中国（準備中）</button>
+          </div>
+        </section>
+
+        <p id="entity-meta" class="entity-meta"></p>
+
+        <section id="entity-results" class="entity-results">
+          <div class="loading-spinner">検索語を入力してください（2文字以上）</div>
+        </section>
+      </div>
     </main>
 
     <footer class="app-footer">

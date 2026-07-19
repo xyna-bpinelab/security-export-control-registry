@@ -11,11 +11,50 @@ const BASE_URLS = {
   remote: 'https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/countries'
 };
 
+const DATA_BASE_URLS = {
+  local: '/data', // vite.config.js serveDataDir plugin serves ../data at /data
+  remote: 'https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/data'
+};
+
 /**
  * Resolves the base URL for fetching datasource registry.
  */
 function getBaseUrl() {
   return BASE_URLS[DATA_SOURCE_MODE] || BASE_URLS.local;
+}
+
+/**
+ * Resolves the base URL for fetching the consolidated entity database.
+ */
+function getDataBaseUrl() {
+  return DATA_BASE_URLS[DATA_SOURCE_MODE] || DATA_BASE_URLS.local;
+}
+
+/**
+ * Fetches data/manifest.json, the index of available entity list files.
+ * @returns {Promise<Object>} Manifest object with a `lists` array.
+ */
+export async function fetchEntityManifest() {
+  const url = `${getDataBaseUrl()}/manifest.json`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status} when fetching entity manifest.`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetches and parses data/entities/<country>.json for a given country code.
+ * @param {string} country - Country code (e.g., 'us')
+ * @returns {Promise<Array>} Array of normalized entity records.
+ */
+export async function fetchEntities(country) {
+  const url = `${getDataBaseUrl()}/entities/${country}.json`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status} when fetching entities for '${country}'.`);
+  }
+  return response.json();
 }
 
 /**
