@@ -3,6 +3,16 @@
   "description": "Machine-readable index of consolidated export-control / sanction entity lists published by this registry. Each entry points to a JSON file under data/entities/. Data is a best-effort mirror of public government sources — always verify against the primary source (source_url on each record) before making compliance decisions.",
   "lists": [
     {
+      "list_id": "jp-end-user-list",
+      "country": "jp",
+      "name_en": "Foreign End-User List",
+      "file": "data/entities/jp.json",
+      "record_count": 835,
+      "source_url": "https://www.meti.go.jp/press/2025/09/20250929006/20250929006.html",
+      "update_frequency": "irregular",
+      "last_updated": "2026-07-19"
+    },
+    {
       "list_id": "us-consolidated-screening-list",
       "country": "us",
       "name_en": "Consolidated Screening List (CSL)",
@@ -13,5 +23,5 @@
       "last_updated": "2026-07-19"
     }
   ],
-  "generated_at": "2026-07-19T06:32:09Z"
+  "generated_at": "2026-07-19T07:24:00Z"
 }

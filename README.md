@@ -30,14 +30,16 @@ security-export-control-registry/
 ├── data/                   # 統合エンティティデータベース（掲載企業・個人等の実体データ）
 │   ├── manifest.json       # 収録リストの索引（件数・更新日・出典URL）
 │   └── entities/
-│       └── us.json         # 米国 Consolidated Screening List（正規化済み）
+│       ├── us.json         # 米国 Consolidated Screening List（正規化済み）
+│       └── jp.json         # 日本 外国ユーザーリスト（正規化済み）
 └── scripts/
     ├── crawler/            # 自動更新検知クローラー
     │   ├── check_updates.py
     │   └── requirements.txt
     └── ingest/             # 実体データ取得・正規化スクリプト
         ├── common.py
-        └── ingest_us_csl.py
+        ├── ingest_us_csl.py
+        └── ingest_jp_end_user_list.py
 ```
 
 ## セットアップと使用方法
@@ -75,13 +77,22 @@ python scripts/crawler/check_updates.py
 ```
 https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/data/manifest.json
 https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/data/entities/us.json
+https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry/main/data/entities/jp.json
 ```
 
 `data/manifest.json` が索引となり、収録リストごとのファイルパス・件数・出典・更新頻度を確認できます。
 各レコードは `schema/entity-schema.json` に準拠し、`source_url` と `last_verified` を必ず含みます。
 
-現時点では米国 Consolidated Screening List（Entity List, SDN List等11リストの統合）のみを収録しており、
-`.github/workflows/ingest-entities.yml` により毎日自動更新されます。日本・中国分は今後追加予定です。
+現時点では以下の2リストを収録しています。中国分は今後追加予定です。
+
+| 国 | リスト | 件数 | 更新頻度 |
+| --- | --- | --- | --- |
+| 🇺🇸 米国 | Consolidated Screening List（Entity List, SDN List等11リストの統合） | 約25,800件 | 毎日自動更新 |
+| 🇯🇵 日本 | 外国ユーザーリスト（METIが改正の都度PDFで公表） | 約835件 | 毎週月曜チェック（改正は年数回程度） |
+
+日本分はMETIが構造化データを提供しておらず、改正のたびにPDFが新しいURLで公表されるため、
+`scripts/ingest/ingest_jp_end_user_list.py` 内の `PRESS_RELEASE_URL` を改正時に手動更新する必要があります
+（`countries/jp/datasources.yaml` の `jp-end-user-list` エントリにも同様の注記があります）。
 
 **注意:** 本データはあくまで公式情報源のミラー（ベストエフォート）です。コンプライアンス上の判断を行う際は、
 必ず各レコードの `source_url` から一次情報源を確認してください。
@@ -89,6 +100,7 @@ https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry
 ```bash
 # 手動での再取得・検証
 python scripts/ingest/ingest_us_csl.py
+python scripts/ingest/ingest_jp_end_user_list.py
 python schema/validate_entities.py
 ```
 
