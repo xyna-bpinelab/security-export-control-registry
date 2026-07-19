@@ -1,0 +1,41 @@
+datasources:
+  - id: us-export-administration-regulations
+    name: "Export Administration Regulations (EAR)"
+    authority: "Bureau of Industry and Security, Department of Commerce"
+    category: "law"
+    url: "https://www.bis.doc.gov/index.php/regulations/export-administration-regulations-ear"
+    format: "pdf"
+    frequency: "irregular"
+    last_checked: "2026-07-19"
+    description: "米国発のデュアルユース（軍民両用）の貨物・技術・ソフトウェアの輸出、再輸出、みなし輸出等を規制する規則。域外適用がある点が特徴。"
+
+  - id: us-international-traffic-in-arms-regulations
+    name: "International Traffic in Arms Regulations (ITAR)"
+    authority: "Directorate of Defense Trade Controls, Department of State"
+    category: "law"
+    url: "https://www.pmddtc.state.gov/ddtc_public?id=ddtc_kb_article_page&sys_id=24d528fddbfc930044f9ff621f961987"
+    format: "html"
+    frequency: "irregular"
+    last_checked: "2026-07-19"
+    description: "米国の防衛関連製品、防衛役務、関連技術の輸出及び一時輸入をコントロールする規制。USML（United States Munitions List）を定義する。"
+
+  - id: us-consolidated-screening-list
+    name: "Consolidated Screening List (CSL)"
+    authority: "International Trade Administration, Department of Commerce"
+    category: "sanction_list"
+    url: "https://www.trade.gov/consolidated-screening-list"
+    format: "csv"
+    api_endpoint: "https://api.trade.gov/gateway/v1/consolidated_screening_list/search"
+    frequency: "daily"
+    last_checked: "2026-07-19"
+    description: "米国政府（商務省、国務省、財務省）が発行する複数の輸出制限リスト（Entity List、SDN List等）を統合したスクリーニング用リスト。"
+
+  - id: us-entity-list
+    name: "Entity List"
+    authority: "Bureau of Industry and Security, Department of Commerce"
+    category: "sanction_list"
+    url: "https://www.bis.doc.gov/index.php/policy-guidance/lists-of-parties-of-concern/entity-list"
+    format: "html"
+    frequency: "irregular"
+    last_checked: "2026-07-19"
+    description: "米国の国家安全保障や外交政策の利益に反する活動に関与した、または関与する深刻なリスクがある外国の実体（企業、研究機関、個人等）のリスト。"

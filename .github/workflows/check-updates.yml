@@ -1,0 +1,51 @@
+name: Check Source Updates
+
+on:
+  schedule:
+    # Runs at 00:00 UTC (09:00 JST) every day
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/crawler/requirements.txt
+
+      - name: Run Crawler
+        run: |
+          python scripts/crawler/check_updates.py
+
+      - name: Create Issue if Update Detected
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "【自動検知】安全保障輸出管理の規制ソースに変更がありました" \
+            --body-file scripts/crawler/update_summary.txt \
+            --label "update-alert"
+
+      - name: Commit and Push State Changes
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add scripts/crawler/state.json
+          git commit -m "chore: update crawler state [skip ci]"
+          git push

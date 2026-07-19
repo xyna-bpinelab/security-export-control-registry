@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Country Datasources Schema",
+  "type": "object",
+  "properties": {
+    "datasources": {
+      "type": "array",
+      "description": "List of data sources for export control regulations",
+      "items": {
+        "$ref": "#/definitions/datasource"
+      }
+    }
+  },
+  "required": [
+    "datasources"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "datasource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the datasource (e.g. jp-foreign-exchange-act)",
+          "pattern": "^[a-z]{2}-[a-z0-9_-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Official name of the regulation, circular, or list in the local language"
+        },
+        "name_en": {
+          "type": "string",
+          "description": "English name of the regulation, circular, or list"
+        },
+        "authority": {
+          "type": "string",
+          "description": "Governing body or administrative authority in the local language"
+        },
+        "authority_en": {
+          "type": "string",
+          "description": "English name of the governing body or administrative authority"
+        },
+        "category": {
+          "type": "string",
+          "description": "Type of registry data source",
+          "enum": [
+            "law",
+            "cabinet_order",
+            "ministerial_order",
+            "circular",
+            "sanction_list",
+            "other"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the primary source or information portal"
+        },
+        "format": {
+          "type": "string",
+          "description": "Primary data format available",
+          "enum": [
+            "html",
+            "pdf",
+            "json",
+            "csv",
+            "tsv",
+            "xml",
+            "api",
+            "other"
+          ]
+        },
+        "api_endpoint": {
+          "type": "string",
+          "description": "API query endpoint, if applicable"
+        },
+        "frequency": {
+          "type": "string",
+          "description": "Update frequency of the source",
+          "enum": [
+            "daily",
+            "weekly",
+            "monthly",
+            "irregular",
+            "static"
+          ]
+        },
+        "last_checked": {
+          "type": "string",
+          "description": "Date of the last metadata verification in YYYY-MM-DD format",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief summary of the data source"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "authority",
+        "category",
+        "url",
+        "format",
+        "frequency",
+        "last_checked"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
