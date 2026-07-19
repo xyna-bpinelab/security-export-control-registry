@@ -127,6 +127,28 @@ datasources:
         title: "取引禁止・許可拒否等"
         summary: "掲載された実体に対する両用品等管制物項の輸出禁止・制限、既存の輸出活動の中止命令等の措置を規定。"
 
+  - id: cn-attention-list
+    name: "关注名单"
+    name_en: "Attention List"
+    authority: "中华人民共和国商务部"
+    authority_en: "Ministry of Commerce of the People's Republic of China"
+    category: "sanction_list"
+    url: "https://aqygzj.mofcom.gov.cn/flzc/gzjgfxwj/index.html"
+    format: "html"
+    frequency: "irregular"
+    last_checked: "2026-07-19"
+    description: "两用物项出口管制条例第26条に基づき、両用品の最終需要者・最終用途を確認できない輸入者・最終需要者を掲載するリスト。管控名单より緩やかな措置（一般許可の利用不可・単項許可申請時のリスク評価報告提出義務等）を課す。2026年に運用開始された新しい制度で、対象実体は核査への協力により掲載解除を申請できる。掲載は商務部公告により個別に随時追加されるため、最新版はaqygzj.mofcom.gov.cnの公告一覧での確認が必要。"
+    summary_tree:
+      - section: "掲載基準（両用物项出口管制条例第26条）"
+        title: "最終需要者・最終用途の確認不能"
+        summary: "両用品の最終需要者又は最終用途を確認できない輸入者・最終需要者を対象とする旨を規定。管控名单（重大な違反）より軽度の懸念に対応する予防的措置。"
+      - section: "措置内容"
+        title: "一般許可利用不可・リスク評価報告義務"
+        summary: "対象実体への両用品輸出について、一般許可及び登記填報方式による輸出凭証の取得を不可とし、単項許可申請時にリスク評価報告及び軍事用途に用いない旨の書面確約の提出を義務付ける。"
+      - section: "掲載解除"
+        title: "核査協力による移出申請"
+        summary: "対象実体が核査への協力義務を履行した場合、商務部の確認を経て関注名单から移出（削除）を申請できる旨を規定。"
+
   - id: cn-arms-export-regulation
     name: "中华人民共和国军品出口管理条例"
     name_en: "Regulations of the People's Republic of China on Administration of Arms Export"

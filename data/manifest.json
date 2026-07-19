@@ -3,6 +3,16 @@
   "description": "Machine-readable index of consolidated export-control / sanction entity lists published by this registry. Each entry points to a JSON file under data/entities/. Data is a best-effort mirror of public government sources — always verify against the primary source (source_url on each record) before making compliance decisions.",
   "lists": [
     {
+      "list_id": "cn-entity-lists",
+      "country": "cn",
+      "name_en": "Unreliable Entity List + Export Control Watchlist + Attention List (combined)",
+      "file": "data/entities/cn.json",
+      "record_count": 240,
+      "source_url": "https://aqygzj.mofcom.gov.cn/flzc/gzjgfxwj/index.html",
+      "update_frequency": "irregular",
+      "last_updated": "2026-07-19"
+    },
+    {
       "list_id": "jp-end-user-list",
       "country": "jp",
       "name_en": "Foreign End-User List",
@@ -23,5 +33,5 @@
       "last_updated": "2026-07-19"
     }
   ],
-  "generated_at": "2026-07-19T07:24:00Z"
+  "generated_at": "2026-07-19T08:02:48Z"
 }
