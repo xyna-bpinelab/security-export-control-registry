@@ -21,6 +21,8 @@ security-export-control-registry/
 │   │   └── datasources.yaml
 │   ├── us/                 # 米国（EAR, ITAR, Entity List, SDNリストなど）
 │   │   └── datasources.yaml
+│   ├── cn/                 # 中国（出口管制法、両用物項出口管制条例、不可靠実体清单など）
+│   │   └── datasources.yaml
 │   ├── eu/                 # 欧州（EU Dual-Use Regulation）
 │   └── international/      # 国際レジーム（WA, MTCR, NSG, AG）
 └── scripts/
