@@ -48,14 +48,25 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git pull --rebase --autostash
           git add data/entities/us.json data/manifest.json data/entity_count_history.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "chore: refresh US Consolidated Screening List [skip ci]"
-            git push
+            exit 0
           fi
+          git commit -m "chore: refresh US Consolidated Screening List [skip ci]"
+          # ingest-us/jp/cn share manifest.json and entity_count_history.json,
+          # so a workflow_dispatch run (all three jobs at once) can race on
+          # the push; retry with a rebase in between attempts.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), rebasing onto latest main and retrying..."
+            git pull --rebase --autostash
+            sleep $((RANDOM % 10 + 1))
+          done
+          echo "::error::Failed to push after 5 attempts"
+          exit 1
 
       - name: Ensure Label Exists
         if: hashFiles('scripts/crawler/update_summary.txt') != ''
@@ -106,14 +117,25 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git pull --rebase --autostash
           git add data/entities/jp.json data/manifest.json data/entity_count_history.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "chore: refresh JP Foreign End-User List [skip ci]"
-            git push
+            exit 0
           fi
+          git commit -m "chore: refresh JP Foreign End-User List [skip ci]"
+          # ingest-us/jp/cn share manifest.json and entity_count_history.json,
+          # so a workflow_dispatch run (all three jobs at once) can race on
+          # the push; retry with a rebase in between attempts.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), rebasing onto latest main and retrying..."
+            git pull --rebase --autostash
+            sleep $((RANDOM % 10 + 1))
+          done
+          echo "::error::Failed to push after 5 attempts"
+          exit 1
 
       - name: Ensure Label Exists
         if: hashFiles('scripts/crawler/update_summary.txt') != ''
@@ -164,14 +186,25 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git pull --rebase --autostash
           git add data/entities/cn.json data/manifest.json data/entity_count_history.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "chore: refresh CN entity lists [skip ci]"
-            git push
+            exit 0
           fi
+          git commit -m "chore: refresh CN entity lists [skip ci]"
+          # ingest-us/jp/cn share manifest.json and entity_count_history.json,
+          # so a workflow_dispatch run (all three jobs at once) can race on
+          # the push; retry with a rebase in between attempts.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), rebasing onto latest main and retrying..."
+            git pull --rebase --autostash
+            sleep $((RANDOM % 10 + 1))
+          done
+          echo "::error::Failed to push after 5 attempts"
+          exit 1
 
       - name: Ensure Label Exists
         if: hashFiles('scripts/crawler/update_summary.txt') != ''
