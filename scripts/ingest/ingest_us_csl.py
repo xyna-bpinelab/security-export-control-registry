@@ -15,7 +15,7 @@ import requests
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(__file__))
-from common import write_entities, update_manifest, today_utc
+from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary
 
 CSL_URL = "https://data.trade.gov/downloadable_consolidated_screening_list/v1/consolidated.json"
 LIST_ID = "us-consolidated-screening-list"
@@ -116,6 +116,13 @@ def main():
             file=sys.stderr,
         )
         sys.exit(1)
+
+    old_entities = read_entities("us")
+    diff = diff_entities(old_entities, entities)
+    summary = format_diff_summary("US Consolidated Screening List (CSL)", LIST_ID, diff)
+    if summary:
+        write_diff_summary(summary)
+        print("Wrote diff summary for update-alert issue.")
 
     out_path = write_entities("us", entities)
     print(f"Wrote {len(entities)} normalized entities to {out_path}")

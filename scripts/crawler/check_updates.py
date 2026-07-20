@@ -113,60 +113,6 @@ def check_jp_meti(state):
         "state": current_state
     }
 
-def check_us_csl(state):
-    url = "https://api.trade.gov/files/consolidated_screening_list/consolidated.csv"
-    print(f"Checking US Consolidated Screening List (CSL) URL: {url}")
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36"
-    }
-    
-    try:
-        r = requests.head(url, headers=headers, timeout=15)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"Error requesting US CSL via HEAD, trying GET: {e}", file=sys.stderr)
-        try:
-            r = requests.get(url, headers=headers, timeout=15, stream=True)
-            r.raise_for_status()
-        except Exception as e_get:
-            print(f"Error requesting US CSL via GET: {e_get}", file=sys.stderr)
-            return None
-        
-    last_modified = r.headers.get('Last-Modified', '')
-    etag = r.headers.get('ETag', '')
-    content_length = r.headers.get('Content-Length', '')
-    
-    current_state = {
-        "last_modified": last_modified,
-        "etag": etag,
-        "content_length": content_length
-    }
-    
-    prev = state.get("us_csl", {})
-    changed = False
-    details = []
-    
-    if not prev:
-        changed = True
-        details.append("Initial monitoring setup for US CSL.")
-    else:
-        if prev.get("etag") != current_state["etag"] and current_state["etag"]:
-            changed = True
-            details.append(f"ETag changed: {prev.get('etag')} -> {current_state['etag']}")
-        elif prev.get("last_modified") != current_state["last_modified"] and current_state["last_modified"]:
-            changed = True
-            details.append(f"Last-Modified changed: {prev.get('last_modified')} -> {current_state['last_modified']}")
-        elif prev.get("content_length") != current_state["content_length"] and current_state["content_length"]:
-            changed = True
-            details.append(f"Content-Length changed: {prev.get('content_length')} -> {current_state['content_length']}")
-            
-    return {
-        "changed": changed,
-        "details": details,
-        "state": current_state
-    }
-
 def main():
     state = load_state()
     new_state = {}
@@ -184,20 +130,7 @@ def main():
     else:
         if "jp_meti" in state:
             new_state["jp_meti"] = state["jp_meti"]
-            
-    # US CSL
-    us_result = check_us_csl(state)
-    if us_result:
-        new_state["us_csl"] = us_result["state"]
-        if us_result["changed"]:
-            updates.append({
-                "source": "US Consolidated Screening List (CSL)",
-                "details": us_result["details"]
-            })
-    else:
-        if "us_csl" in state:
-            new_state["us_csl"] = state["us_csl"]
-            
+
     # Save current state
     save_state(new_state)
     

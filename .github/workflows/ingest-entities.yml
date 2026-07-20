@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   ingest-us:
@@ -55,6 +56,26 @@ jobs:
             git push
           fi
 
+      - name: Ensure Label Exists
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "update-alert" \
+            --description "Automated alert: regulatory source change detected" \
+            --color "D93F0B" \
+            --force
+
+      - name: Create Issue if Update Detected
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "【自動検知】US Consolidated Screening List に変更がありました" \
+            --body-file scripts/crawler/update_summary.txt \
+            --label "update-alert"
+
   ingest-jp:
     if: github.event_name != 'schedule' || github.event.schedule == '30 12 * * 1'
     runs-on: ubuntu-latest
@@ -93,6 +114,26 @@ jobs:
             git push
           fi
 
+      - name: Ensure Label Exists
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "update-alert" \
+            --description "Automated alert: regulatory source change detected" \
+            --color "D93F0B" \
+            --force
+
+      - name: Create Issue if Update Detected
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "【自動検知】JP 外国ユーザーリストに変更がありました" \
+            --body-file scripts/crawler/update_summary.txt \
+            --label "update-alert"
+
   ingest-cn:
     if: github.event_name != 'schedule' || github.event.schedule == '0 13 * * 1'
     runs-on: ubuntu-latest
@@ -130,3 +171,23 @@ jobs:
             git commit -m "chore: refresh CN entity lists [skip ci]"
             git push
           fi
+
+      - name: Ensure Label Exists
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "update-alert" \
+            --description "Automated alert: regulatory source change detected" \
+            --color "D93F0B" \
+            --force
+
+      - name: Create Issue if Update Detected
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "【自動検知】CN 企業リストに変更がありました" \
+            --body-file scripts/crawler/update_summary.txt \
+            --label "update-alert"

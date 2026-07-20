@@ -4,13 +4,112 @@ import os
 import json
 from datetime import datetime, timezone
 
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+DATA_DIR = os.path.join(REPO_ROOT, 'data')
 ENTITIES_DIR = os.path.join(DATA_DIR, 'entities')
 MANIFEST_PATH = os.path.join(DATA_DIR, 'manifest.json')
+SUMMARY_FILE = os.path.join(REPO_ROOT, 'scripts', 'crawler', 'update_summary.txt')
+
+# Set on every ingest run regardless of whether the underlying record
+# actually changed, so it must be excluded from diffing or every entity
+# would show up as "updated" on every run.
+DIFF_IGNORED_FIELDS = {'last_verified'}
 
 
 def today_utc():
     return datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+
+def read_entities(country):
+    """Loads the currently-committed data/entities/<country>.json, or []
+    if this is the first time the list is being ingested."""
+    path = os.path.join(ENTITIES_DIR, f'{country}.json')
+    if not os.path.exists(path):
+        return []
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def diff_entities(old_entities, new_entities):
+    """Compares two entity lists by id and returns which entities were
+    added, removed, or had a field change (other than last_verified)."""
+    old_by_id = {e['id']: e for e in old_entities}
+    new_by_id = {e['id']: e for e in new_entities}
+
+    added_ids = new_by_id.keys() - old_by_id.keys()
+    removed_ids = old_by_id.keys() - new_by_id.keys()
+    common_ids = old_by_id.keys() & new_by_id.keys()
+
+    updated = []
+    for eid in common_ids:
+        old_e, new_e = old_by_id[eid], new_by_id[eid]
+        changes = [
+            (key, old_e.get(key), new_e.get(key))
+            for key in sorted(set(old_e) | set(new_e))
+            if key not in DIFF_IGNORED_FIELDS and old_e.get(key) != new_e.get(key)
+        ]
+        if changes:
+            updated.append({'id': eid, 'entity': new_e, 'changes': changes})
+
+    return {
+        'added': sorted((new_by_id[i] for i in added_ids), key=lambda e: e['id']),
+        'removed': sorted((old_by_id[i] for i in removed_ids), key=lambda e: e['id']),
+        'updated': sorted(updated, key=lambda u: u['id']),
+        'is_first_run': not old_entities,
+    }
+
+
+def _format_diff_value(value):
+    if isinstance(value, list):
+        value = "; ".join(str(v) for v in value)
+    value = "" if value is None else str(value)
+    value = value.replace("\n", " ").strip()
+    if len(value) > 80:
+        value = value[:80] + "..."
+    return value or "(空)"
+
+
+def format_diff_summary(list_name, list_id, diff, max_items=30):
+    """Builds a Japanese Markdown summary of added/removed/updated entities
+    for use as a GitHub issue body. Returns None when there's nothing worth
+    reporting (no real changes, or this is the list's first-ever ingest,
+    where every record would trivially show up as "added")."""
+    if diff['is_first_run'] or not (diff['added'] or diff['removed'] or diff['updated']):
+        return None
+
+    lines = [f"## {list_name} ({list_id})", ""]
+
+    def render_section(title, items, render_item):
+        if not items:
+            return
+        lines.append(f"### {title} ({len(items)}件)")
+        for item in items[:max_items]:
+            lines.append(render_item(item))
+        if len(items) > max_items:
+            lines.append(f"- ...ほか{len(items) - max_items}件")
+        lines.append("")
+
+    render_section("追加", diff['added'], lambda e: f"- {e['entity_name']} (id: {e['id']})")
+    render_section("削除", diff['removed'], lambda e: f"- {e['entity_name']} (id: {e['id']})")
+
+    def render_updated(u):
+        changes_text = "; ".join(
+            f'{field}: "{_format_diff_value(old)}" → "{_format_diff_value(new)}"'
+            for field, old, new in u['changes']
+        )
+        return f"- {u['entity']['entity_name']} (id: {u['id']}): {changes_text}"
+
+    render_section("更新", diff['updated'], render_updated)
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def write_diff_summary(text):
+    """Writes (overwriting) the shared update-summary file consumed by the
+    'Create Issue if Update Detected' workflow step."""
+    os.makedirs(os.path.dirname(SUMMARY_FILE), exist_ok=True)
+    with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+        f.write(text)
 
 
 def write_entities(country, records):

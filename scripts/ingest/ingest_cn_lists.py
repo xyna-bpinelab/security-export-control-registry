@@ -41,7 +41,7 @@ import requests
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.dirname(__file__))
-from common import write_entities, update_manifest, today_utc
+from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -306,6 +306,15 @@ def main():
         by_list[e["list_id"]] += 1
     for list_id, count in sorted(by_list.items()):
         print(f"  {list_id}: {count} records")
+
+    old_entities = read_entities("cn")
+    diff = diff_entities(old_entities, deduped)
+    summary = format_diff_summary(
+        "中国 不可靠実体清単・出口管制管控名単・関注名単 (統合)", "cn-entity-lists", diff
+    )
+    if summary:
+        write_diff_summary(summary)
+        print("Wrote diff summary for update-alert issue.")
 
     out_path = write_entities("cn", deduped)
     print(f"\nWrote {len(deduped)} normalized entities to {out_path}")

@@ -28,7 +28,7 @@ import fitz  # PyMuPDF
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.dirname(__file__))
-from common import write_entities, update_manifest, today_utc
+from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary
 
 PRESS_RELEASE_URL = "https://www.meti.go.jp/press/2025/09/20250929006/20250929006.html"
 LIST_ID = "jp-end-user-list"
@@ -157,6 +157,13 @@ def main():
 
     checked_on = today_utc()
     entities = [normalize(r, checked_on) for r in rows]
+
+    old_entities = read_entities("jp")
+    diff = diff_entities(old_entities, entities)
+    summary = format_diff_summary("外国ユーザーリスト (Foreign End-User List)", LIST_ID, diff)
+    if summary:
+        write_diff_summary(summary)
+        print("Wrote diff summary for update-alert issue.")
 
     out_path = write_entities("jp", entities)
     print(f"Wrote {len(entities)} normalized entities to {out_path}")
