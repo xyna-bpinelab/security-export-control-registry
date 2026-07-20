@@ -7,9 +7,9 @@ let allDatasources = [];
 let searchQuery = '';
 
 let currentMode = 'laws';
-let entitySelectedCountries = new Set(['us']);
+let entitySelectedCountries = new Set(['us', 'jp', 'cn']);
 let entityQuery = '';
-let entityViewMode = 'card'; // 'card' | 'list'
+let entityViewMode = 'list'; // 'card' | 'list'
 let entitySummaryExpanded = true; // global toggle for all countries' meta + trend chart panels
 let entityManifest = null;
 let entityCountHistory = null; // list_id -> Array of {date, record_count}
