@@ -8,6 +8,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 DATA_DIR = os.path.join(REPO_ROOT, 'data')
 ENTITIES_DIR = os.path.join(DATA_DIR, 'entities')
 MANIFEST_PATH = os.path.join(DATA_DIR, 'manifest.json')
+COUNT_HISTORY_PATH = os.path.join(DATA_DIR, 'entity_count_history.json')
 SUMMARY_FILE = os.path.join(REPO_ROOT, 'scripts', 'crawler', 'update_summary.txt')
 
 # Set on every ingest run regardless of whether the underlying record
@@ -110,6 +111,28 @@ def write_diff_summary(text):
     os.makedirs(os.path.dirname(SUMMARY_FILE), exist_ok=True)
     with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
         f.write(text)
+
+
+def record_count_history(list_id, date, record_count):
+    """Upserts (date, record_count) into list_id's series in
+    data/entity_count_history.json, powering the UI's collection-size trend
+    chart. Reruns on the same day overwrite that day's point rather than
+    appending a duplicate."""
+    if os.path.exists(COUNT_HISTORY_PATH):
+        with open(COUNT_HISTORY_PATH, 'r', encoding='utf-8') as f:
+            history = json.load(f)
+    else:
+        history = {}
+
+    series = [pt for pt in history.get(list_id, []) if pt['date'] != date]
+    series.append({'date': date, 'record_count': record_count})
+    series.sort(key=lambda pt: pt['date'])
+    history[list_id] = series
+
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(COUNT_HISTORY_PATH, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+        f.write('\n')
 
 
 def write_entities(country, records):

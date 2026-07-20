@@ -41,7 +41,7 @@ import requests
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.dirname(__file__))
-from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary
+from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary, record_count_history
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -330,6 +330,9 @@ def main():
         "last_updated": checked_on,
     })
     print("Updated data/manifest.json")
+
+    record_count_history("cn-entity-lists", checked_on, len(deduped))
+    print("Updated data/entity_count_history.json")
 
 
 if __name__ == "__main__":

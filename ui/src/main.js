@@ -1,4 +1,5 @@
-import { fetchDatasources, fetchEntityManifest, fetchEntities } from './api.js';
+import { fetchDatasources, fetchEntityManifest, fetchEntities, fetchEntityCountHistory } from './api.js';
+import { renderTrendChart } from './trendChart.js';
 
 // Application State
 let currentCountry = 'jp';
@@ -9,6 +10,7 @@ let currentMode = 'laws';
 let entityCountry = 'us';
 let entityQuery = '';
 let entityManifest = null;
+let entityCountHistory = null; // list_id -> Array of {date, record_count}
 const entitiesCache = {}; // country -> Array of entity records
 const ENTITY_RESULTS_LIMIT = 200;
 const ENTITY_MIN_QUERY_LENGTH = 2;
@@ -24,6 +26,7 @@ const entitiesView = document.getElementById('entities-view');
 const entitySearchInput = document.getElementById('entity-search-input');
 const entityTabButtons = document.querySelectorAll('#entities-view .tab-btn');
 const entityMetaEl = document.getElementById('entity-meta');
+const entityTrendChartEl = document.getElementById('entity-trend-chart');
 const entityResultsEl = document.getElementById('entity-results');
 
 // Initial Load
@@ -136,6 +139,11 @@ async function initEntityView() {
   } catch (error) {
     console.error('[ENTITY API ERROR] Failed to fetch manifest:', error);
   }
+  try {
+    entityCountHistory = await fetchEntityCountHistory();
+  } catch (error) {
+    console.error('[ENTITY API ERROR] Failed to fetch count history:', error);
+  }
   renderEntityMeta();
   loadEntities(entityCountry);
 }
@@ -165,11 +173,13 @@ async function loadEntities(country) {
 function renderEntityMeta() {
   if (!entityManifest) {
     entityMetaEl.textContent = '';
+    entityTrendChartEl.innerHTML = '';
     return;
   }
   const listInfo = entityManifest.lists?.find(l => l.country === entityCountry);
   if (!listInfo) {
     entityMetaEl.textContent = '';
+    entityTrendChartEl.innerHTML = '';
     return;
   }
   entityMetaEl.innerHTML = `
@@ -178,6 +188,9 @@ function renderEntityMeta() {
     ｜ 更新頻度: ${listInfo.update_frequency}
     ｜ <a href="${listInfo.source_url}" target="_blank" rel="noopener">出典: ${listInfo.name_en}</a>
   `;
+
+  const series = entityCountHistory?.[listInfo.list_id] || [];
+  renderTrendChart(entityTrendChartEl, series, listInfo.name_en);
 }
 
 function renderEntityResults() {

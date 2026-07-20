@@ -44,6 +44,20 @@ export async function fetchEntityManifest() {
 }
 
 /**
+ * Fetches data/entity_count_history.json, a map of list_id -> array of
+ * {date, record_count} points powering the collection-size trend chart.
+ * @returns {Promise<Object>} Map of list_id to its daily record_count series.
+ */
+export async function fetchEntityCountHistory() {
+  const url = `${getDataBaseUrl()}/entity_count_history.json`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status} when fetching entity count history.`);
+  }
+  return response.json();
+}
+
+/**
  * Fetches and parses data/entities/<country>.json for a given country code.
  * @param {string} country - Country code (e.g., 'us')
  * @returns {Promise<Array>} Array of normalized entity records.

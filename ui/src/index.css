@@ -155,6 +155,149 @@ body {
   line-height: 1.5;
 }
 
+/* Entity Trend Chart */
+.trend-chart-card {
+  margin: -1rem 0 1.5rem 0;
+  padding: 1.2rem 1.5rem 0.8rem 1.5rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+.trend-chart-card:empty {
+  display: none;
+}
+
+.trend-chart-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.trend-chart-title {
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dimmed);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trend-chart-empty {
+  padding: 1rem 0 1.4rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.trend-chart-svg {
+  width: 100%;
+  height: 160px;
+  display: block;
+  overflow: visible;
+}
+
+.trend-gridline {
+  stroke: var(--border-color);
+  stroke-width: 1;
+}
+
+.trend-axis-label {
+  fill: var(--text-dimmed);
+  font-family: var(--font-body);
+  font-size: 10px;
+}
+
+.trend-area {
+  fill: var(--primary);
+  fill-opacity: 0.1;
+  stroke: none;
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trend-end-marker {
+  fill: var(--primary);
+  stroke: var(--bg-app);
+  stroke-width: 2;
+}
+
+.trend-end-label {
+  fill: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.trend-hover-line {
+  stroke: var(--primary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+}
+
+.trend-hover-line.is-visible {
+  opacity: 0.6;
+}
+
+.trend-hover-dot {
+  fill: var(--primary);
+  stroke: var(--bg-app);
+  stroke-width: 2;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+}
+
+.trend-hover-dot.is-visible {
+  opacity: 1;
+}
+
+.trend-hit-rect {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.trend-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.trend-tooltip.is-visible {
+  opacity: 1;
+}
+
+.trend-tooltip-date {
+  color: var(--text-dimmed);
+  font-size: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.trend-tooltip-value {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
 .tab-btn:disabled {
   cursor: not-allowed;
   opacity: 0.4;

@@ -1,0 +1,20 @@
+{
+  "cn-entity-lists": [
+    {
+      "date": "2026-07-19",
+      "record_count": 240
+    }
+  ],
+  "jp-end-user-list": [
+    {
+      "date": "2026-07-19",
+      "record_count": 835
+    }
+  ],
+  "us-consolidated-screening-list": [
+    {
+      "date": "2026-07-19",
+      "record_count": 25818
+    }
+  ]
+}

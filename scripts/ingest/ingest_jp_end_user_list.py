@@ -28,7 +28,7 @@ import fitz  # PyMuPDF
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.dirname(__file__))
-from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary
+from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary, record_count_history
 
 PRESS_RELEASE_URL = "https://www.meti.go.jp/press/2025/09/20250929006/20250929006.html"
 LIST_ID = "jp-end-user-list"
@@ -179,6 +179,9 @@ def main():
         "last_updated": checked_on,
     })
     print("Updated data/manifest.json")
+
+    record_count_history(LIST_ID, checked_on, len(entities))
+    print("Updated data/entity_count_history.json")
 
 
 if __name__ == "__main__":
