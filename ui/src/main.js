@@ -4,7 +4,6 @@ import { renderTrendChart } from './trendChart.js';
 // Application State
 let currentCountry = 'jp';
 let allDatasources = [];
-let searchQuery = '';
 
 let currentMode = 'laws';
 let entitySelectedCountries = new Set(['us', 'jp', 'cn']);
@@ -26,7 +25,6 @@ const COUNTRY_LABELS = {
 
 // DOM Elements
 const registryContainer = document.getElementById('registry-container');
-const searchInput = document.getElementById('search-input');
 const tabButtons = document.querySelectorAll('.tab-btn');
 
 const modeButtons = document.querySelectorAll('.mode-btn');
@@ -87,12 +85,6 @@ function setupEventListeners() {
       currentCountry = country;
       loadRegistry(currentCountry);
     });
-  });
-
-  // Search Input Handler
-  searchInput.addEventListener('input', (e) => {
-    searchQuery = e.target.value.toLowerCase().trim();
-    renderRegistry();
   });
 
   // Mode Switching (Laws <-> Entities)
@@ -431,37 +423,13 @@ function createEntityCardHtml(ent) {
 
 // Render Registry Cards to DOM
 function renderRegistry() {
-  const filtered = allDatasources.filter(ds => {
-    if (!searchQuery) return true;
-    
-    // Check main text fields
-    const nameMatch = ds.name?.toLowerCase().includes(searchQuery);
-    const nameEnMatch = ds.name_en?.toLowerCase().includes(searchQuery);
-    const descMatch = ds.description?.toLowerCase().includes(searchQuery);
-    const authMatch = ds.authority?.toLowerCase().includes(searchQuery);
-    const catMatch = ds.category?.toLowerCase().includes(searchQuery);
-    
-    if (nameMatch || nameEnMatch || descMatch || authMatch || catMatch) return true;
-    
-    // Check summary tree items
-    if (ds.summary_tree) {
-      return ds.summary_tree.some(item => {
-        return item.section?.toLowerCase().includes(searchQuery) ||
-               (item.title && item.title.toLowerCase().includes(searchQuery)) ||
-               item.summary?.toLowerCase().includes(searchQuery);
-      });
-    }
-    
-    return false;
-  });
-
-  if (filtered.length === 0) {
-    registryContainer.innerHTML = `<div class="no-results">検索条件に一致するデータソースが見つかりませんでした。</div>`;
+  if (allDatasources.length === 0) {
+    registryContainer.innerHTML = `<div class="no-results">データソースが見つかりませんでした。</div>`;
     return;
   }
 
   registryContainer.innerHTML = '';
-  filtered.forEach(ds => {
+  allDatasources.forEach(ds => {
     const card = createCardElement(ds);
     registryContainer.appendChild(card);
   });
@@ -501,49 +469,34 @@ function createCardElement(ds) {
   // Summary Tree Accordion HTML
   let summaryTreeHtml = '';
   if (ds.summary_tree && ds.summary_tree.length > 0) {
-    let anySectionMatch = false;
-    const itemsHtml = ds.summary_tree.map(item => {
-      const matchSearch = searchQuery && (
-        item.section?.toLowerCase().includes(searchQuery) ||
-        (item.title && item.title.toLowerCase().includes(searchQuery)) ||
-        item.summary?.toLowerCase().includes(searchQuery)
-      );
-      if (matchSearch) anySectionMatch = true;
-
-      const highlightClass = matchSearch ? 'open' : '';
-
-      return `
-        <div class="accordion-item ${highlightClass}">
-          <button class="accordion-header">
-            <span class="accordion-title-span">
-              <span class="accordion-section-code">${item.section}</span>
-              <strong>${item.title || ''}</strong>
-            </span>
-            <span class="accordion-arrow">▶</span>
-          </button>
-          <div class="accordion-content" style="${highlightClass ? 'max-height: 500px; padding-bottom: 0.8rem;' : ''}">
-            <p>${item.summary}</p>
-            ${item.url ? `
-              <a href="${item.url}" target="_blank" rel="noopener" class="accordion-link">
-                原典を確認 ↗
-              </a>
-            ` : ''}
-          </div>
+    const itemsHtml = ds.summary_tree.map(item => `
+      <div class="accordion-item">
+        <button class="accordion-header">
+          <span class="accordion-title-span">
+            <span class="accordion-section-code">${item.section}</span>
+            <strong>${item.title || ''}</strong>
+          </span>
+          <span class="accordion-arrow">▶</span>
+        </button>
+        <div class="accordion-content">
+          <p>${item.summary}</p>
+          ${item.url ? `
+            <a href="${item.url}" target="_blank" rel="noopener" class="accordion-link">
+              原典を確認 ↗
+            </a>
+          ` : ''}
         </div>
-      `;
-    }).join('');
+      </div>
+    `).join('');
 
-    // Collapsed by default; auto-expanded when the current search matches
-    // one of this card's items, so a search result is never hidden behind
-    // an extra click.
-    const sectionOpen = anySectionMatch;
+    // Collapsed by default, toggled independently per card.
     summaryTreeHtml = `
       <div class="card-summary-section">
-        <button class="card-summary-toggle ${sectionOpen ? 'open' : ''}" type="button" aria-expanded="${sectionOpen}">
+        <button class="card-summary-toggle" type="button" aria-expanded="false">
           <span class="section-label">規制コンテンツ要約 (SUMMARY)</span>
           <span class="accordion-arrow">▶</span>
         </button>
-        <div class="accordion-container ${sectionOpen ? '' : 'collapsed'}">
+        <div class="accordion-container collapsed">
           ${itemsHtml}
         </div>
       </div>
