@@ -10,6 +10,7 @@ let currentMode = 'laws';
 let entitySelectedCountries = new Set(['us']);
 let entityQuery = '';
 let entityViewMode = 'card'; // 'card' | 'list'
+let entitySummaryExpanded = true; // global toggle for all countries' meta + trend chart panels
 let entityManifest = null;
 let entityCountHistory = null; // list_id -> Array of {date, record_count}
 const entitiesCache = {}; // country -> Array of entity records
@@ -35,6 +36,7 @@ const entitySearchInput = document.getElementById('entity-search-input');
 const entityCountryCheckboxes = document.querySelectorAll('.entity-country-checkbox');
 const entityCountryAllCheckbox = document.getElementById('entity-country-all');
 const entityViewToggleButtons = document.querySelectorAll('#entity-view-toggle .view-toggle-btn');
+const entitySummaryToggleBtn = document.getElementById('entity-summary-toggle');
 const entitySummaryPanelsEl = document.getElementById('entity-summary-panels');
 const entityResultsEl = document.getElementById('entity-results');
 const entityModalOverlay = document.getElementById('entity-modal-overlay');
@@ -149,6 +151,13 @@ function setupEventListeners() {
     });
   });
 
+  // Entity Summary Toggle (accordion: shows/hides every selected country's
+  // meta info + trend chart together, as one unit rather than per-country)
+  entitySummaryToggleBtn.addEventListener('click', () => {
+    entitySummaryExpanded = !entitySummaryExpanded;
+    applyEntitySummaryExpandedState();
+  });
+
   // Entity Search Input (debounced; the underlying dataset can be tens of
   // thousands of records, so we avoid re-filtering on every keystroke)
   let entitySearchDebounce;
@@ -258,12 +267,22 @@ async function ensureSelectedCountriesLoaded() {
   renderEntityResults();
 }
 
+// Reflects entitySummaryExpanded onto the toggle button + panels container.
+// Applied to the button separately from renderEntitySummaryPanels() because
+// clicking the toggle doesn't rebuild the panels, only shows/hides them.
+function applyEntitySummaryExpandedState() {
+  entitySummaryToggleBtn.setAttribute('aria-expanded', String(entitySummaryExpanded));
+  entitySummaryToggleBtn.classList.toggle('open', entitySummaryExpanded);
+  entitySummaryPanelsEl.classList.toggle('collapsed', !entitySummaryExpanded);
+}
+
 // Renders one summary panel (collection size + trend chart) per selected
 // country. Kept as separate small-multiple panels rather than one shared
 // chart because record counts differ by orders of magnitude across
 // countries (US ~26k vs. JP ~800 vs. CN ~240) — a single shared axis would
 // flatten the smaller series.
 function renderEntitySummaryPanels() {
+  applyEntitySummaryExpandedState();
   if (!entityManifest || entitySelectedCountries.size === 0) {
     entitySummaryPanelsEl.innerHTML = '';
     return;

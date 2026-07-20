@@ -466,12 +466,49 @@ body {
   border-right: 1px solid var(--border-color);
 }
 
-/* Entity Summary Panels (small multiples: one per selected country) */
+/* Entity Summary Section (collapsible: toggle shows/hides every country's
+   meta info + trend chart together, not per-country) */
+.entity-summary-section {
+  margin-bottom: 0.5rem;
+}
+
+.entity-summary-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-dimmed);
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.4rem 0.2rem;
+  margin-bottom: 0.4rem;
+  transition: var(--transition-smooth);
+}
+
+.entity-summary-toggle:hover {
+  color: var(--text-main);
+}
+
+.entity-summary-toggle .accordion-arrow {
+  transition: transform 0.2s ease;
+}
+
+.entity-summary-toggle.open .accordion-arrow {
+  transform: rotate(90deg);
+}
+
 .entity-summary-panels {
   display: flex;
   flex-wrap: wrap;
   gap: 1.2rem;
-  margin: -0.6rem 0 1.5rem 0;
+  margin: 0 0 1.5rem 0;
+}
+
+.entity-summary-panels.collapsed {
+  display: none;
 }
 
 .entity-summary-panel {
@@ -481,6 +518,14 @@ body {
 
 .entity-summary-panel .entity-meta {
   margin: 0 0 0.6rem 0;
+}
+
+/* The base .trend-chart-card rule has a negative top margin that assumes
+   it directly follows a standalone .entity-meta paragraph (see below); that
+   collapses with this panel's own .entity-meta margin and causes overlap,
+   so cancel it here. */
+.entity-summary-panel .trend-chart-card {
+  margin-top: 0;
 }
 
 /* Entity List View (table) */
@@ -586,7 +631,10 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  padding: 1.8rem;
+  /* Extra right padding keeps content (e.g. the badge row) clear of the
+     absolutely-positioned close button, which sits closer to the dialog's
+     edge than the rest of the content's padding. */
+  padding: 1.8rem 3.2rem 1.8rem 1.8rem;
 }
 
 .modal-dialog .registry-card {
