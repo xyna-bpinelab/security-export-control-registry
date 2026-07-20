@@ -31,6 +31,16 @@ jobs:
         run: |
           python scripts/crawler/check_updates.py
 
+      - name: Ensure Label Exists
+        if: hashFiles('scripts/crawler/update_summary.txt') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "update-alert" \
+            --description "Automated alert: regulatory source change detected" \
+            --color "D93F0B" \
+            --force
+
       - name: Create Issue if Update Detected
         if: hashFiles('scripts/crawler/update_summary.txt') != ''
         env:
