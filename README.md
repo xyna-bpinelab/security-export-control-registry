@@ -7,6 +7,24 @@
 安全保障輸出管理（外為法、米国EAR/ITARなど）の法規・リストは極めて複雑で、国際情勢やレジームの合意を反映して頻繁に改正されます。
 本プロジェクトでは、各国の公式データソースを構造化し、その更新状況を継続監視・バリデーションする基盤を構築します。将来的にグラフデータベース等と連携し、法令の依存関係や適用関係を「見える化」することを目指します。
 
+## Webポータル
+
+法規制・国際輸出管理レジームの一覧と、規制対象エンティティの横断検索をブラウザで行えるWebポータルを公開しています。
+
+🔗 https://xyna-bpinelab.github.io/security-export-control-registry/
+
+- **規制根拠情報**: 国・地域（日本／米国／中国／国際レジーム）ごとに法令・政令・省令・通達・国際輸出管理レジームの要約をカード形式で閲覧し、原典へのリンクからアクセスできます。
+- **規制対象エンティティ検索**: 米国・日本・中国の規制対象エンティティ（合計約27,000件）を、チェックボックスで選択した国を横断して検索できます。カード表示／リスト表示（詳細はモーダルで確認）の切替、及び国ごとの収録件数の日次推移グラフに対応しています。
+
+ソースは `ui/`（Vite製の静的サイト）にあり、`main` への push 時に `.github/workflows/deploy-ui.yml` が自動でビルド・GitHub Pagesへデプロイします。
+
+```bash
+# ローカルでの起動
+cd ui
+npm install
+npm run dev
+```
+
 ## ディレクトリ構造
 
 ```
@@ -19,29 +37,42 @@ security-export-control-registry/
 │   ├── entity-schema.json
 │   └── validate_entities.py
 ├── countries/              # 国・地域別データ（法令・リストのメタデータ）
-│   ├── jp/                 # 日本（外為法、輸出令、貨物等省令、運用・役務通達など）
+│   ├── jp/                 # 日本（外為法、輸出令、貨物等省令、運用・役務・提出書類通達など）
 │   │   └── datasources.yaml
 │   ├── us/                 # 米国（EAR, ITAR, Entity List, SDNリストなど）
 │   │   └── datasources.yaml
 │   ├── cn/                 # 中国（出口管制法、両用物項出口管制条例、不可靠実体清单など）
 │   │   └── datasources.yaml
-│   ├── eu/                 # 欧州（EU Dual-Use Regulation）
-│   └── international/      # 国際レジーム（WA, MTCR, NSG, AG）
+│   └── ml/                 # 国際輸出管理レジーム（ワッセナー・NSG・MTCR・オーストラリア・グループ）
+│       └── datasources.yaml
 ├── data/                   # 統合エンティティデータベース（掲載企業・個人等の実体データ）
 │   ├── manifest.json       # 収録リストの索引（件数・更新日・出典URL）
+│   ├── entity_count_history.json  # リストごとの収録件数の日次推移（UIのグラフ表示に使用）
 │   └── entities/
 │       ├── us.json         # 米国 Consolidated Screening List（正規化済み）
 │       ├── jp.json         # 日本 外国ユーザーリスト（正規化済み）
 │       └── cn.json         # 中国 不可靠実体清单・出口管制管控名单・关注名单（正規化済み）
-└── scripts/
-    ├── crawler/            # 自動更新検知クローラー
-    │   ├── check_updates.py
-    │   └── requirements.txt
-    └── ingest/             # 実体データ取得・正規化スクリプト
-        ├── common.py
-        ├── ingest_us_csl.py
-        ├── ingest_jp_end_user_list.py
-        └── ingest_cn_lists.py
+├── scripts/
+│   ├── crawler/            # 自動更新検知クローラー
+│   │   ├── check_updates.py
+│   │   └── requirements.txt
+│   └── ingest/             # 実体データ取得・正規化・差分検知スクリプト
+│       ├── common.py
+│       ├── ingest_us_csl.py
+│       ├── ingest_jp_end_user_list.py
+│       └── ingest_cn_lists.py
+├── ui/                     # Webポータル（Vite製の静的サイト、GitHub Pagesで公開）
+│   ├── index.html
+│   └── src/
+│       ├── main.js         # 画面ロジック（規制根拠情報・エンティティ検索の両モード）
+│       ├── api.js          # データ取得（GitHub Raw / ローカルdatasources.yaml・data/）
+│       ├── trendChart.js   # 収録件数推移の簡易SVGチャート
+│       └── index.css
+└── .github/workflows/      # 自動検知・自動反映・自動デプロイ
+    ├── validate-data.yml       # push/PR時にdatasources.yaml・entitiesをスキーマ検証
+    ├── ingest-entities.yml     # 実体データの自動再取得・差分要約付きIssue起票・自動コミット
+    ├── check-updates.yml       # JP METIお知らせページの監視・変更検知時にIssue起票
+    └── deploy-ui.yml           # ui/への変更をGitHub Pagesへ自動デプロイ
 ```
 
 ## セットアップと使用方法
@@ -62,13 +93,24 @@ pip install -r scripts/crawler/requirements.txt
 python schema/validate_datasources.py
 ```
 
-### 更新検知（プロトタイプ）
+### 更新検知（ローカル実行）
 
-各データソースが更新されているかを検知するクローラーを実行します。
+日本METIの新着お知らせページの更新を検知するクローラーをローカルで実行できます（本番ではGitHub Actionsが毎日自動実行します。詳細は次章参照）。
 
 ```bash
 python scripts/crawler/check_updates.py
 ```
+
+## 自動化（GitHub Actions）
+
+データの検証・更新・公開は、以下のワークフローにより自動化されています。
+
+| ワークフロー | トリガー | 内容 |
+| --- | --- | --- |
+| `validate-data.yml` | push / PR（main） | `datasources.yaml`・`data/entities/*.json` をスキーマ検証 |
+| `ingest-entities.yml` | 米国は毎日、日本・中国は毎週月曜（＋手動実行） | 各国の実体データを再取得・正規化し `data/entities/*.json` を自動コミット。追加・更新・削除されたエンティティを検知した場合は、差分サマリー付きでGitHub Issue（`update-alert` ラベル）を自動起票 |
+| `check-updates.yml` | 毎日（＋手動実行） | 日本METIの新着お知らせページを監視し、変更を検知した場合はIssueを自動起票 |
+| `deploy-ui.yml` | `ui/` への push（main）＋手動実行 | `ui/` をビルドし、GitHub Pagesへ自動デプロイ |
 
 ## 統合エンティティデータベース（API的な利用方法）
 
@@ -86,7 +128,7 @@ https://raw.githubusercontent.com/xyna-bpinelab/security-export-control-registry
 `data/manifest.json` が索引となり、収録リストごとのファイルパス・件数・出典・更新頻度を確認できます。
 各レコードは `schema/entity-schema.json` に準拠し、`source_url` と `last_verified` を必ず含みます。
 
-現時点では以下の3カ国を収録しています。
+実体データベース（`data/entities/`）は現時点で以下の3カ国を収録しています（法令・国際レジームのメタデータ `countries/` は、これとは別に日本・米国・中国・国際レジーム（ml/）の4区分を収録しています）。
 
 | 国 | リスト | 件数 | 更新頻度 |
 | --- | --- | --- | --- |
