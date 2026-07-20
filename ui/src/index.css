@@ -794,10 +794,41 @@ body.modal-open {
   letter-spacing: 0.05em;
 }
 
+.card-summary-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.card-summary-toggle .section-label {
+  color: var(--text-dimmed);
+}
+
+.card-summary-toggle:hover .section-label {
+  color: var(--text-main);
+}
+
+.card-summary-toggle .accordion-arrow {
+  transition: transform 0.2s ease;
+}
+
+.card-summary-toggle.open .accordion-arrow {
+  transform: rotate(90deg);
+}
+
 .accordion-container {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.accordion-container.collapsed {
+  display: none;
 }
 
 .accordion-item {

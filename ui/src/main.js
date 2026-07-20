@@ -501,12 +501,14 @@ function createCardElement(ds) {
   // Summary Tree Accordion HTML
   let summaryTreeHtml = '';
   if (ds.summary_tree && ds.summary_tree.length > 0) {
+    let anySectionMatch = false;
     const itemsHtml = ds.summary_tree.map(item => {
       const matchSearch = searchQuery && (
         item.section?.toLowerCase().includes(searchQuery) ||
         (item.title && item.title.toLowerCase().includes(searchQuery)) ||
         item.summary?.toLowerCase().includes(searchQuery)
       );
+      if (matchSearch) anySectionMatch = true;
 
       const highlightClass = matchSearch ? 'open' : '';
 
@@ -531,10 +533,17 @@ function createCardElement(ds) {
       `;
     }).join('');
 
+    // Collapsed by default; auto-expanded when the current search matches
+    // one of this card's items, so a search result is never hidden behind
+    // an extra click.
+    const sectionOpen = anySectionMatch;
     summaryTreeHtml = `
       <div class="card-summary-section">
-        <h3 class="section-label">規制コンテンツ要約 (Summary)</h3>
-        <div class="accordion-container">
+        <button class="card-summary-toggle ${sectionOpen ? 'open' : ''}" type="button" aria-expanded="${sectionOpen}">
+          <span class="section-label">規制コンテンツ要約 (SUMMARY)</span>
+          <span class="accordion-arrow">▶</span>
+        </button>
+        <div class="accordion-container ${sectionOpen ? '' : 'collapsed'}">
           ${itemsHtml}
         </div>
       </div>
@@ -581,9 +590,9 @@ function setupAccordions() {
     header.addEventListener('click', (e) => {
       const item = e.currentTarget.closest('.accordion-item');
       const content = item.querySelector('.accordion-content');
-      
+
       const isOpen = item.classList.contains('open');
-      
+
       if (isOpen) {
         item.classList.remove('open');
         content.style.maxHeight = null;
@@ -593,6 +602,18 @@ function setupAccordions() {
         content.style.maxHeight = content.scrollHeight + 'px';
         content.style.paddingBottom = '0.8rem';
       }
+    });
+  });
+
+  // Per-card "規制コンテンツ要約" toggle: shows/hides that card's whole
+  // accordion list at once, independent of every other card.
+  const summaryToggles = registryContainer.querySelectorAll('.card-summary-toggle');
+  summaryToggles.forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+      const container = e.currentTarget.nextElementSibling;
+      const isOpen = e.currentTarget.classList.toggle('open');
+      container.classList.toggle('collapsed', !isOpen);
+      e.currentTarget.setAttribute('aria-expanded', String(isOpen));
     });
   });
 }
