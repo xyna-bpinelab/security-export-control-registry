@@ -568,6 +568,7 @@ function getCategoryLabel(cat) {
     ministerial_order: '省令 (Ministerial Order)',
     circular: '通達 (Circular)',
     sanction_list: '規制リスト (Sanction List)',
+    international_regime: '国際レジーム (International Regime)',
     other: 'その他 (Other)'
   };
   return labels[cat] || cat;
