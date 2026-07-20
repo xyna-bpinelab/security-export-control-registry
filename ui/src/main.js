@@ -7,13 +7,21 @@ let allDatasources = [];
 let searchQuery = '';
 
 let currentMode = 'laws';
-let entityCountry = 'us';
+let entitySelectedCountries = new Set(['us']);
 let entityQuery = '';
+let entityViewMode = 'card'; // 'card' | 'list'
 let entityManifest = null;
 let entityCountHistory = null; // list_id -> Array of {date, record_count}
 const entitiesCache = {}; // country -> Array of entity records
+let entityById = new Map(); // id -> entity, rebuilt on every render (list-view row -> modal lookup)
 const ENTITY_RESULTS_LIMIT = 200;
 const ENTITY_MIN_QUERY_LENGTH = 2;
+const ENTITY_COUNTRIES = ['us', 'jp', 'cn'];
+const COUNTRY_LABELS = {
+  us: '🇺🇸 米国',
+  jp: '🇯🇵 日本',
+  cn: '🇨🇳 中国',
+};
 
 // DOM Elements
 const registryContainer = document.getElementById('registry-container');
@@ -24,10 +32,14 @@ const modeButtons = document.querySelectorAll('.mode-btn');
 const lawsView = document.getElementById('laws-view');
 const entitiesView = document.getElementById('entities-view');
 const entitySearchInput = document.getElementById('entity-search-input');
-const entityTabButtons = document.querySelectorAll('#entities-view .tab-btn');
-const entityMetaEl = document.getElementById('entity-meta');
-const entityTrendChartEl = document.getElementById('entity-trend-chart');
+const entityCountryCheckboxes = document.querySelectorAll('.entity-country-checkbox');
+const entityCountryAllCheckbox = document.getElementById('entity-country-all');
+const entityViewToggleButtons = document.querySelectorAll('#entity-view-toggle .view-toggle-btn');
+const entitySummaryPanelsEl = document.getElementById('entity-summary-panels');
 const entityResultsEl = document.getElementById('entity-results');
+const entityModalOverlay = document.getElementById('entity-modal-overlay');
+const entityModalContent = document.getElementById('entity-modal-content');
+const entityModalCloseBtn = document.getElementById('entity-modal-close');
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
@@ -100,18 +112,40 @@ function setupEventListeners() {
     });
   });
 
-  // Entity Country Tabs
-  entityTabButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (btn.disabled) return;
-      const country = e.currentTarget.getAttribute('data-country');
-      if (country === entityCountry) return;
+  // Entity Country Checkboxes (multi-select: search spans every checked country)
+  entityCountryCheckboxes.forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const country = e.target.getAttribute('data-country');
+      if (e.target.checked) {
+        entitySelectedCountries.add(country);
+      } else {
+        entitySelectedCountries.delete(country);
+      }
+      syncEntityCountryAllCheckbox();
+      onEntitySelectedCountriesChanged();
+    });
+  });
 
-      entityTabButtons.forEach(b => b.classList.remove('active'));
+  entityCountryAllCheckbox.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    entityCountryCheckboxes.forEach(cb => {
+      cb.checked = checked;
+    });
+    entitySelectedCountries = new Set(checked ? ENTITY_COUNTRIES : []);
+    onEntitySelectedCountriesChanged();
+  });
+
+  // Entity View Toggle (card <-> list)
+  entityViewToggleButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const mode = e.currentTarget.getAttribute('data-view');
+      if (mode === entityViewMode) return;
+
+      entityViewToggleButtons.forEach(b => b.classList.remove('active'));
       e.currentTarget.classList.add('active');
 
-      entityCountry = country;
-      loadEntities(entityCountry);
+      entityViewMode = mode;
+      renderEntityResults();
     });
   });
 
@@ -125,10 +159,55 @@ function setupEventListeners() {
       renderEntityResults();
     }, 200);
   });
+
+  // Entity Detail Modal (list-view row click opens it; see renderEntityResultsAsList)
+  entityResultsEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.entity-list-row');
+    if (!row) return;
+    const ent = entityById.get(row.dataset.entityId);
+    if (ent) openEntityModal(ent);
+  });
+  entityResultsEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.entity-list-row');
+    if (!row) return;
+    e.preventDefault();
+    const ent = entityById.get(row.dataset.entityId);
+    if (ent) openEntityModal(ent);
+  });
+  entityModalCloseBtn.addEventListener('click', closeEntityModal);
+  entityModalOverlay.addEventListener('click', (e) => {
+    if (e.target === entityModalOverlay) closeEntityModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !entityModalOverlay.classList.contains('hidden')) closeEntityModal();
+  });
 }
 
-// Lazily loads the entity manifest + the currently selected country's
-// entity dataset the first time the Entities view is opened.
+function syncEntityCountryAllCheckbox() {
+  entityCountryAllCheckbox.checked = entitySelectedCountries.size === ENTITY_COUNTRIES.length;
+  entityCountryAllCheckbox.indeterminate =
+    entitySelectedCountries.size > 0 && entitySelectedCountries.size < ENTITY_COUNTRIES.length;
+}
+
+function onEntitySelectedCountriesChanged() {
+  renderEntitySummaryPanels();
+  ensureSelectedCountriesLoaded();
+}
+
+function openEntityModal(ent) {
+  entityModalContent.innerHTML = createEntityCardHtml(ent);
+  entityModalOverlay.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function closeEntityModal() {
+  entityModalOverlay.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+// Lazily loads the entity manifest + the currently selected countries'
+// entity datasets the first time the Entities view is opened.
 let entityInitStarted = false;
 async function initEntityView() {
   if (entityInitStarted) return;
@@ -144,19 +223,29 @@ async function initEntityView() {
   } catch (error) {
     console.error('[ENTITY API ERROR] Failed to fetch count history:', error);
   }
-  renderEntityMeta();
-  loadEntities(entityCountry);
+  renderEntitySummaryPanels();
+  ensureSelectedCountriesLoaded();
 }
 
-async function loadEntities(country) {
-  if (entitiesCache[country]) {
+// Fetches (and caches) every currently-checked country's entity dataset,
+// then re-renders results. Countries already in entitiesCache are skipped.
+async function ensureSelectedCountriesLoaded() {
+  if (entitySelectedCountries.size === 0) {
     renderEntityResults();
     return;
   }
 
-  entityResultsEl.innerHTML = `<div class="loading-spinner">${country.toUpperCase()}のデータを読み込んでいます（初回は数秒〜十数秒かかる場合があります）...</div>`;
+  const toLoad = [...entitySelectedCountries].filter(c => !entitiesCache[c]);
+  if (toLoad.length === 0) {
+    renderEntityResults();
+    return;
+  }
+
+  entityResultsEl.innerHTML = `<div class="loading-spinner">${toLoad.map(c => c.toUpperCase()).join(' / ')}のデータを読み込んでいます（初回は数秒〜十数秒かかる場合があります）...</div>`;
   try {
-    entitiesCache[country] = await fetchEntities(country);
+    await Promise.all(toLoad.map(async country => {
+      entitiesCache[country] = await fetchEntities(country);
+    }));
   } catch (error) {
     entityResultsEl.innerHTML = `
       <div class="no-results">
@@ -166,42 +255,63 @@ async function loadEntities(country) {
     `;
     return;
   }
-  renderEntityMeta();
   renderEntityResults();
 }
 
-function renderEntityMeta() {
-  if (!entityManifest) {
-    entityMetaEl.textContent = '';
-    entityTrendChartEl.innerHTML = '';
+// Renders one summary panel (collection size + trend chart) per selected
+// country. Kept as separate small-multiple panels rather than one shared
+// chart because record counts differ by orders of magnitude across
+// countries (US ~26k vs. JP ~800 vs. CN ~240) — a single shared axis would
+// flatten the smaller series.
+function renderEntitySummaryPanels() {
+  if (!entityManifest || entitySelectedCountries.size === 0) {
+    entitySummaryPanelsEl.innerHTML = '';
     return;
   }
-  const listInfo = entityManifest.lists?.find(l => l.country === entityCountry);
-  if (!listInfo) {
-    entityMetaEl.textContent = '';
-    entityTrendChartEl.innerHTML = '';
-    return;
-  }
-  entityMetaEl.innerHTML = `
-    収録件数: <strong>${listInfo.record_count.toLocaleString()}件</strong>
-    ｜ 最終更新: ${listInfo.last_updated}
-    ｜ 更新頻度: ${listInfo.update_frequency}
-    ｜ <a href="${listInfo.source_url}" target="_blank" rel="noopener">出典: ${listInfo.name_en}</a>
-  `;
 
-  const series = entityCountHistory?.[listInfo.list_id] || [];
-  renderTrendChart(entityTrendChartEl, series, listInfo.name_en);
+  const selected = ENTITY_COUNTRIES.filter(c => entitySelectedCountries.has(c));
+  entitySummaryPanelsEl.innerHTML = selected.map(c => `
+    <div class="entity-summary-panel">
+      <p class="entity-meta" id="entity-meta-${c}"></p>
+      <div class="trend-chart-card" id="entity-trend-chart-${c}"></div>
+    </div>
+  `).join('');
+
+  selected.forEach(country => {
+    const listInfo = entityManifest.lists?.find(l => l.country === country);
+    const metaEl = document.getElementById(`entity-meta-${country}`);
+    const chartEl = document.getElementById(`entity-trend-chart-${country}`);
+    if (!listInfo) return;
+
+    metaEl.innerHTML = `
+      ${COUNTRY_LABELS[country] || country}　収録件数: <strong>${listInfo.record_count.toLocaleString()}件</strong>
+      ｜ 最終更新: ${listInfo.last_updated}
+      ｜ 更新頻度: ${listInfo.update_frequency}
+      ｜ <a href="${listInfo.source_url}" target="_blank" rel="noopener">出典: ${listInfo.name_en}</a>
+    `;
+
+    const series = entityCountHistory?.[listInfo.list_id] || [];
+    renderTrendChart(chartEl, series, listInfo.name_en);
+  });
 }
 
 function renderEntityResults() {
-  const entities = entitiesCache[entityCountry];
-  if (!entities) return;
+  if (entitySelectedCountries.size === 0) {
+    entityResultsEl.innerHTML = `<div class="no-results">検索対象の国を1つ以上選択してください。</div>`;
+    return;
+  }
+
+  // Still waiting on a fetch for one of the selected countries; the
+  // in-flight ensureSelectedCountriesLoaded() call will re-render when done.
+  const stillLoading = [...entitySelectedCountries].some(c => !entitiesCache[c]);
+  if (stillLoading) return;
 
   if (entityQuery.length < ENTITY_MIN_QUERY_LENGTH) {
     entityResultsEl.innerHTML = `<div class="loading-spinner">検索語を入力してください（${ENTITY_MIN_QUERY_LENGTH}文字以上）</div>`;
     return;
   }
 
+  const entities = [...entitySelectedCountries].flatMap(c => entitiesCache[c] || []);
   const matches = entities.filter(ent => {
     const nameMatch = ent.entity_name?.toLowerCase().includes(entityQuery);
     const aliasMatch = ent.aliases?.some(a => a.toLowerCase().includes(entityQuery));
@@ -216,10 +326,52 @@ function renderEntityResults() {
   }
 
   const shown = matches.slice(0, ENTITY_RESULTS_LIMIT);
-  entityResultsEl.innerHTML = `
-    <p class="entity-result-count">${matches.length.toLocaleString()}件中 ${shown.length.toLocaleString()}件を表示</p>
+  entityById = new Map(shown.map(ent => [ent.id, ent]));
+
+  const countHtml = `<p class="entity-result-count">${matches.length.toLocaleString()}件中 ${shown.length.toLocaleString()}件を表示</p>`;
+  entityResultsEl.innerHTML = countHtml + (entityViewMode === 'list'
+    ? renderEntityResultsAsList(shown)
+    : renderEntityResultsAsCards(shown));
+}
+
+function renderEntityResultsAsCards(shown) {
+  return `
     <div class="registry-grid">
       ${shown.map(createEntityCardHtml).join('')}
+    </div>
+  `;
+}
+
+function renderEntityResultsAsList(shown) {
+  const rowsHtml = shown.map(ent => {
+    const aliases = ent.aliases && ent.aliases.length > 0 ? ent.aliases.join(' / ') : '';
+    return `
+      <tr class="entity-list-row" data-entity-id="${ent.id}" tabindex="0">
+        <td><span class="badge badge-country">${COUNTRY_LABELS[ent.country] || ent.country}</span></td>
+        <td>${ent.entity_type || ''}</td>
+        <td class="entity-list-name">${ent.entity_name}</td>
+        <td class="entity-list-aliases">${aliases}</td>
+        <td class="entity-list-reason">${ent.reason || ''}</td>
+        <td>${ent.last_verified || ''}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="entity-list-table-wrapper">
+      <table class="entity-list-table">
+        <thead>
+          <tr>
+            <th>国・リスト</th>
+            <th>種別</th>
+            <th>名称</th>
+            <th>別名</th>
+            <th>事由</th>
+            <th>最終確認</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
     </div>
   `;
 }
@@ -236,6 +388,7 @@ function createEntityCardHtml(ent) {
     <article class="registry-card">
       <div class="card-header">
         <div class="card-badges">
+          <span class="badge badge-country">${COUNTRY_LABELS[ent.country] || ent.country}</span>
           <span class="badge" style="background-color: var(--color-list); color: #fff;">${ent.entity_type}</span>
           <span class="badge badge-frequency">${ent.source_list_name || ''}</span>
           <span class="badge badge-checked">最終確認: ${ent.last_verified}</span>
