@@ -11,6 +11,17 @@ on:
     # re-scans MOFCOM's regulatory-document index for new announcements)
     - cron: '0 13 * * 1'
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Which ingest job(s) to run (use us/jp/cn to test one in isolation without racing the others on manifest.json)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - us
+          - jp
+          - cn
 
 permissions:
   contents: write
@@ -18,9 +29,11 @@ permissions:
 
 jobs:
   ingest-us:
-    # Both cron entries above trigger this workflow, so without this guard
-    # every job would run on both schedules. Manual dispatch always runs both.
-    if: github.event_name != 'schedule' || github.event.schedule == '0 12 * * *'
+    # The three cron entries above all trigger this workflow, so without
+    # this guard every job would run on every schedule.
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'all' || github.event.inputs.target == 'us'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -89,7 +102,9 @@ jobs:
             --label "update-alert"
 
   ingest-jp:
-    if: github.event_name != 'schedule' || github.event.schedule == '30 12 * * 1'
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'all' || github.event.inputs.target == 'jp'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -158,7 +173,9 @@ jobs:
             --label "update-alert"
 
   ingest-cn:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 13 * * 1'
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 13 * * 1') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'all' || github.event.inputs.target == 'cn'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
