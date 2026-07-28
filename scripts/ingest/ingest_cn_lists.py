@@ -39,6 +39,8 @@ import json
 import time
 import requests
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 sys.path.insert(0, os.path.dirname(__file__))
 from common import write_entities, update_manifest, today_utc, read_entities, diff_entities, format_diff_summary, write_diff_summary, record_count_history
@@ -46,6 +48,23 @@ from common import write_entities, update_manifest, today_utc, read_entities, di
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
+
+# aqygzj.mofcom.gov.cn intermittently resets the connection mid-SSL-handshake
+# when hit from GitHub-hosted runner IPs (observed 2026-07-20 and 2026-07-27,
+# both times on the first request of the run). By default requests/urllib3
+# does not retry connection-level failures, so a single reset was enough to
+# abort the whole ingest. Retry with backoff on both connect errors and the
+# common transient HTTP statuses.
+SESSION = requests.Session()
+_retry = Retry(
+    total=5,
+    connect=5,
+    backoff_factor=2,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)
+SESSION.mount("https://", HTTPAdapter(max_retries=_retry))
+SESSION.mount("http://", HTTPAdapter(max_retries=_retry))
 
 INDEX_API = "https://aqygzj.mofcom.gov.cn/api-gateway/jpaas-publish-server/front/page/build/unit"
 INDEX_PARAMS_BASE = {
@@ -86,7 +105,7 @@ def fetch_announcement_index():
     while True:
         params = dict(INDEX_PARAMS_BASE)
         params["paramJson"] = json.dumps({"pageNo": page_no, "pageSize": 15})
-        resp = requests.get(INDEX_API, params=params, headers=HEADERS, timeout=30)
+        resp = SESSION.get(INDEX_API, params=params, headers=HEADERS, timeout=30)
         resp.raise_for_status()
         data = resp.json()
         html = data["data"]["html"]
@@ -118,7 +137,7 @@ def classify(title):
 
 
 def fetch_text(url):
-    resp = requests.get(url, headers=HEADERS, timeout=30)
+    resp = SESSION.get(url, headers=HEADERS, timeout=30)
     resp.raise_for_status()
     # This server doesn't declare charset in Content-Type, so requests'
     # auto-detection guesses wrong; the site is UTF-8 (verified via curl).
