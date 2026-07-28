@@ -7,9 +7,11 @@ on:
     # Runs at 12:30 UTC every Monday (JP's list only revises a few times a
     # year; this just re-checks the currently configured press release PDF)
     - cron: '30 12 * * 1'
-    # Runs at 13:00 UTC every Monday (CN's lists revise irregularly too;
-    # re-scans MOFCOM's regulatory-document index for new announcements)
-    - cron: '0 13 * * 1'
+    # Runs at 13:00 UTC daily (CN's lists revise irregularly; re-scans
+    # MOFCOM's regulatory-document index for new announcements. Was weekly
+    # until 2026-07-28, but a weekly run left a ~2-week gap whenever a
+    # transient connection reset caused a single run to fail)
+    - cron: '0 13 * * *'
   workflow_dispatch:
     inputs:
       target:
@@ -174,7 +176,7 @@ jobs:
 
   ingest-cn:
     if: |
-      (github.event_name == 'schedule' && github.event.schedule == '0 13 * * 1') ||
+      (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'all' || github.event.inputs.target == 'cn'))
     runs-on: ubuntu-latest
     steps:
