@@ -27,11 +27,11 @@
       "country": "us",
       "name_en": "Consolidated Screening List (CSL)",
       "file": "data/entities/us.json",
-      "record_count": 25801,
+      "record_count": 25819,
       "source_url": "https://www.trade.gov/consolidated-screening-list",
       "update_frequency": "daily",
-      "last_updated": "2026-07-29"
+      "last_updated": "2026-07-30"
     }
   ],
-  "generated_at": "2026-07-29T15:13:22Z"
+  "generated_at": "2026-07-30T13:19:24Z"
 }
